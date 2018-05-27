@@ -53,7 +53,6 @@ class MainActivity : Activity() {
 
             ledGpio = manager.openGpio(LED_PIN) // 1. Crea conexión GPIO
             ledGpio.setDirection(Gpio.DIRECTION_OUT_INITIALLY_LOW) // 2. Se indica que es de salida
-            handler.post(runnable) // 3. Llamamos al handler
         } catch (e: IOException) {
             Log.e(TAG, "Error en PeripheralIO API", e)
         }
@@ -62,6 +61,10 @@ class MainActivity : Activity() {
     private val callback: GpioCallback = GpioCallback { gpio ->
         try {
             Log.e(TAG, "cambio botón ${gpio.value}")
+            if (!gpio.value)
+                handler.post(runnable) // 3. Llamamos al handler
+            else
+                handler.removeCallbacks(runnable)
         } catch (e: IOException) {
             e.printStackTrace()
         }
