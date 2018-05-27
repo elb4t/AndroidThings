@@ -45,25 +45,42 @@ class MainActivity : Activity() {
     private val LED_PWM_PIN = "PWM0" // Puerto del LED
     private var ledPwm: Pwm? = null
 
+    private val R_LED_PIN = "BCM13" // Puerto GPIO del LED
+    private val G_LED_PIN = "BCM19" // Puerto GPIO del LED
+    private val B_LED_PIN = "BCM26" // Puerto GPIO del LED
+    private lateinit var RledGpio: Gpio
+    private lateinit var GledGpio: Gpio
+    private lateinit var BledGpio: Gpio
+    private var contadorRGB = 0
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         val manager = PeripheralManager.getInstance()
 
         try {
-            botonGpio = manager.openGpio(BOTON_PIN) // 1. Crea conecxión GPIO
-            botonGpio.setDirection(Gpio.DIRECTION_IN)// 2. Es entrada
-            botonGpio.setEdgeTriggerType(Gpio.EDGE_FALLING) // 3. Habilita eventos de disparo por flanco de bajada
-            //botonGpio.registerGpioCallback(callback) // 4. Registra callback
+//            botonGpio = manager.openGpio(BOTON_PIN) // 1. Crea conecxión GPIO
+//            botonGpio.setDirection(Gpio.DIRECTION_IN)// 2. Es entrada
+//            botonGpio.setEdgeTriggerType(Gpio.EDGE_FALLING) // 3. Habilita eventos de disparo por flanco de bajada
+//            botonGpio.registerGpioCallback(callback) // 4. Registra callback
+//
+//            ledGpio = manager.openGpio(LED_PIN) // 1. Crea conexión GPIO
+//            ledGpio.setDirection(Gpio.DIRECTION_OUT_INITIALLY_LOW) // 2. Se indica que es de salida
+//
+//            ledPwm = manager.openPwm(LED_PWM_PIN); // 1. Crea conexión GPIO
+//            ledPwm?.setPwmFrequencyHz(120.0) // 2. Configuramos PWM
+//            ledPwm?.setPwmDutyCycle(PORCENTAGE_LED_PWM)
+//            ledPwm?.setEnabled(true)
+//            handler.post(runnableAzul) // 3. Llamamos al handler
 
-            ledGpio = manager.openGpio(LED_PIN) // 1. Crea conexión GPIO
-            ledGpio.setDirection(Gpio.DIRECTION_OUT_INITIALLY_LOW) // 2. Se indica que es de salida
-
-            ledPwm = manager.openPwm(LED_PWM_PIN); // 1. Crea conexión GPIO
-            ledPwm?.setPwmFrequencyHz(120.0) // 2. Configuramos PWM
-            ledPwm?.setPwmDutyCycle(PORCENTAGE_LED_PWM)
-            ledPwm?.setEnabled(true)
-            handler.post(runnableAzul) // 3. Llamamos al handler
+            RledGpio = manager.openGpio(R_LED_PIN) // 1. Crea conexión GPIO
+            RledGpio.setDirection(Gpio.DIRECTION_OUT_INITIALLY_LOW) // 2. Se indica que es de salida
+            GledGpio = manager.openGpio(G_LED_PIN) // 1. Crea conexión GPIO
+            GledGpio.setDirection(Gpio.DIRECTION_OUT_INITIALLY_LOW) // 2. Se indica que es de salida
+            BledGpio = manager.openGpio(B_LED_PIN) // 1. Crea conexión GPIO
+            BledGpio.setDirection(Gpio.DIRECTION_OUT_INITIALLY_LOW) // 2. Se indica que es de salida
+            handler.post(runnableRGB) // 3. Llamamos al handler
         } catch (e: IOException) {
             Log.e(TAG, "Error en PeripheralIO API", e)
         }
@@ -92,16 +109,15 @@ class MainActivity : Activity() {
                 Log.e(TAG, "Error en PeripheralIO API", e)
             }
         }
-
     }
     private val runnableAzul: Runnable = object : Runnable {
         override fun run() {
             try {
                 Log.e(TAG, "Enciende led Azul runnable $PORCENTAGE_LED_PWM %")
                 ledPwm?.setPwmDutyCycle(PORCENTAGE_LED_PWM) // 4. Cambiamos valor LED
-                if (PORCENTAGE_LED_PWM >= 100.0){
+                if (PORCENTAGE_LED_PWM >= 100.0) {
                     PORCENTAGE_LED_PWM = 0.0
-                }else{
+                } else {
                     PORCENTAGE_LED_PWM += 20.0
                 }
                 handler.postDelayed(this, INTERVALO_LED.toLong()) // 5. Programamos siguiente llamada dentro de INTERVALO_LED ms
@@ -109,9 +125,38 @@ class MainActivity : Activity() {
                 Log.e(TAG, "Error en PeripheralIO API", e)
             }
         }
-
+    }
+    private val runnableRGB: Runnable = object : Runnable {
+        override fun run() {
+            try {
+                Log.e(TAG, "Enciende led RGB runnable $contadorRGB")
+                when(contadorRGB){
+                    0 -> ledRGB(false,false,false)  // Apagados
+                    1 -> ledRGB(true,false,false)   // R
+                    2 -> ledRGB(true,true,false)    // RG
+                    3 -> ledRGB(true,true,true)     // RGB
+                    4 -> ledRGB(false,true,false)   //  G
+                    5 -> ledRGB(false,true,true)    //  GB
+                    6 -> ledRGB(false,false,true)   //   B
+                    7 -> ledRGB(true,false,true)    // R B
+                }
+                if (contadorRGB < 7)
+                    contadorRGB ++
+                else
+                    contadorRGB = 0
+                handler.postDelayed(this, INTERVALO_LED.toLong()) // 5. Programamos siguiente llamada dentro de INTERVALO_LED ms
+            } catch (e: IOException) {
+                Log.e(TAG, "Error en PeripheralIO API", e)
+            }
+        }
     }
 
+    private fun ledRGB(r: Boolean, g: Boolean, b: Boolean) {
+        Log.e(TAG,"Red:${RledGpio.value}, Green: ${GledGpio.value}, Blue: ${BledGpio.value}")
+        RledGpio.value = r
+        GledGpio.value = g
+        BledGpio.value = b
+    }
 
     override fun onDestroy() {
         super.onDestroy()
