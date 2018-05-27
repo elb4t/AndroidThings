@@ -41,7 +41,7 @@ class MainActivity : Activity() {
     private val handler = Handler() // Handler para el parpadeo
     private lateinit var ledGpio: Gpio
 
-    private val PORCENTAGE_LED_PWM = 25.0 // % encendido
+    private var PORCENTAGE_LED_PWM = 0.0 // % encendido
     private val LED_PWM_PIN = "PWM0" // Puerto del LED
     private var ledPwm: Pwm? = null
 
@@ -63,6 +63,7 @@ class MainActivity : Activity() {
             ledPwm?.setPwmFrequencyHz(120.0) // 2. Configuramos PWM
             ledPwm?.setPwmDutyCycle(PORCENTAGE_LED_PWM)
             ledPwm?.setEnabled(true)
+            handler.post(runnableAzul) // 3. Llamamos al handler
         } catch (e: IOException) {
             Log.e(TAG, "Error en PeripheralIO API", e)
         }
@@ -86,6 +87,23 @@ class MainActivity : Activity() {
             try {
                 Log.e(TAG, "Enciende led runnable")
                 ledGpio.value = !ledGpio.value // 4. Cambiamos valor LED
+                handler.postDelayed(this, INTERVALO_LED.toLong()) // 5. Programamos siguiente llamada dentro de INTERVALO_LED ms
+            } catch (e: IOException) {
+                Log.e(TAG, "Error en PeripheralIO API", e)
+            }
+        }
+
+    }
+    private val runnableAzul: Runnable = object : Runnable {
+        override fun run() {
+            try {
+                Log.e(TAG, "Enciende led Azul runnable $PORCENTAGE_LED_PWM %")
+                ledPwm?.setPwmDutyCycle(PORCENTAGE_LED_PWM) // 4. Cambiamos valor LED
+                if (PORCENTAGE_LED_PWM >= 100.0){
+                    PORCENTAGE_LED_PWM = 0.0
+                }else{
+                    PORCENTAGE_LED_PWM += 20.0
+                }
                 handler.postDelayed(this, INTERVALO_LED.toLong()) // 5. Programamos siguiente llamada dentro de INTERVALO_LED ms
             } catch (e: IOException) {
                 Log.e(TAG, "Error en PeripheralIO API", e)
