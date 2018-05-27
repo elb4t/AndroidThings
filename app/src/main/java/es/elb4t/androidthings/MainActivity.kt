@@ -3,6 +3,7 @@ package es.elb4t.androidthings
 import android.app.Activity
 import android.content.ContentValues.TAG
 import android.os.Bundle
+import android.os.Handler
 import android.util.Log
 import com.google.android.things.pio.Gpio
 import com.google.android.things.pio.GpioCallback
@@ -34,6 +35,11 @@ class MainActivity : Activity() {
     private val BOTON_PIN = "BCM21" // Puerto GPIO del botón
     private lateinit var botonGpio: Gpio
 
+    private val INTERVALO_LED = 1000 // Intervalo parpadeo (ms)
+    private val LED_PIN = "BCM6" // Puerto GPIO del LED
+    private val handler = Handler() // Handler para el parpadeo
+    private lateinit var ledGpio: Gpio
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -44,6 +50,10 @@ class MainActivity : Activity() {
             botonGpio.setDirection(Gpio.DIRECTION_IN)// 2. Es entrada
             botonGpio.setEdgeTriggerType(Gpio.EDGE_FALLING) // 3. Habilita eventos de disparo por flanco de bajada
             botonGpio.registerGpioCallback(callback) // 4. Registra callback
+
+            ledGpio = manager.openGpio(LED_PIN) // 1. Crea conexión GPIO
+            ledGpio.setDirection(Gpio.DIRECTION_OUT_INITIALLY_LOW) // 2. Se indica que es de salida
+            handler.post(runnable) // 3. Llamamos al handler
         } catch (e: IOException) {
             Log.e(TAG, "Error en PeripheralIO API", e)
         }
@@ -57,6 +67,20 @@ class MainActivity : Activity() {
         }
         true // 5. devolvemos true para mantener callback activo
     }
+
+    private val runnable: Runnable = object : Runnable {
+        override fun run() {
+            try {
+                Log.e(TAG, "Enciende led runnable")
+                ledGpio.value = !ledGpio.value // 4. Cambiamos valor LED
+                handler.postDelayed(this, INTERVALO_LED.toLong()) // 5. Programamos siguiente llamada dentro de INTERVALO_LED ms
+            } catch (e: IOException) {
+                Log.e(TAG, "Error en PeripheralIO API", e)
+            }
+        }
+
+    }
+
 
     override fun onDestroy() {
         super.onDestroy()
