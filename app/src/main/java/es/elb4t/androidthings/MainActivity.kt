@@ -8,6 +8,7 @@ import android.util.Log
 import com.google.android.things.pio.Gpio
 import com.google.android.things.pio.GpioCallback
 import com.google.android.things.pio.PeripheralManager
+import com.google.android.things.pio.Pwm
 import java.io.IOException
 
 
@@ -40,6 +41,10 @@ class MainActivity : Activity() {
     private val handler = Handler() // Handler para el parpadeo
     private lateinit var ledGpio: Gpio
 
+    private val PORCENTAGE_LED_PWM = 25.0 // % encendido
+    private val LED_PWM_PIN = "PWM0" // Puerto del LED
+    private var ledPwm: Pwm? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -49,10 +54,15 @@ class MainActivity : Activity() {
             botonGpio = manager.openGpio(BOTON_PIN) // 1. Crea conecxión GPIO
             botonGpio.setDirection(Gpio.DIRECTION_IN)// 2. Es entrada
             botonGpio.setEdgeTriggerType(Gpio.EDGE_FALLING) // 3. Habilita eventos de disparo por flanco de bajada
-            botonGpio.registerGpioCallback(callback) // 4. Registra callback
+            //botonGpio.registerGpioCallback(callback) // 4. Registra callback
 
             ledGpio = manager.openGpio(LED_PIN) // 1. Crea conexión GPIO
             ledGpio.setDirection(Gpio.DIRECTION_OUT_INITIALLY_LOW) // 2. Se indica que es de salida
+
+            ledPwm = manager.openPwm(LED_PWM_PIN); // 1. Crea conexión GPIO
+            ledPwm?.setPwmFrequencyHz(120.0) // 2. Configuramos PWM
+            ledPwm?.setPwmDutyCycle(PORCENTAGE_LED_PWM)
+            ledPwm?.setEnabled(true)
         } catch (e: IOException) {
             Log.e(TAG, "Error en PeripheralIO API", e)
         }
@@ -94,7 +104,14 @@ class MainActivity : Activity() {
             } catch (e: IOException) {
                 Log.e(TAG, "Error en PeripheralIO API", e)
             }
-
+        }
+        if (ledPwm != null) { // 3. Cerramos recursos
+            try {
+                ledPwm?.close()
+                ledPwm = null
+            } catch (e: IOException) {
+                Log.e(TAG, "Error al cerrar PWM", e);
+            }
         }
     }
 }
