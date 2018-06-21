@@ -129,16 +129,16 @@ class MainActivity : Activity() {
     private val runnableRGB: Runnable = object : Runnable {
         override fun run() {
             try {
-                Log.e(TAG, "Enciende led RGB runnable $contadorRGB")
+                Log.i(TAG, "Enciende led RGB runnable $contadorRGB")
                 when(contadorRGB){
                     0 -> ledRGB(false,false,false)  // Apagados
                     1 -> ledRGB(true,false,false)   // R
-                    2 -> ledRGB(true,true,false)    // RG
-                    3 -> ledRGB(true,true,true)     // RGB
-                    4 -> ledRGB(false,true,false)   //  G
+                    2 -> ledRGB(false,true,false)   //  G
+                    3 -> ledRGB(false,false,true)   //   B
+                    4 -> ledRGB(true,true,false)    // RG
                     5 -> ledRGB(false,true,true)    //  GB
-                    6 -> ledRGB(false,false,true)   //   B
-                    7 -> ledRGB(true,false,true)    // R B
+                    6 -> ledRGB(true,false,true)    // R B
+                    7 -> ledRGB(true,true,true)     // RGB
                 }
                 if (contadorRGB < 7)
                     contadorRGB ++
@@ -152,7 +152,7 @@ class MainActivity : Activity() {
     }
 
     private fun ledRGB(r: Boolean, g: Boolean, b: Boolean) {
-        Log.e(TAG,"Red:${RledGpio.value}, Green: ${GledGpio.value}, Blue: ${BledGpio.value}")
+        Log.i(TAG,"Red:${RledGpio.value}, Green: ${GledGpio.value}, Blue: ${BledGpio.value}")
         RledGpio.value = r
         GledGpio.value = g
         BledGpio.value = b
